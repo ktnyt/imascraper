@@ -71,9 +71,13 @@ const (
 	detailPath = "/cg/idol/detail/%s?h=%s"
 )
 
-func detailURL(idolID, cardID string) string {
-	path := fmt.Sprintf(detailPath, idolID, cardID)
-	return fmt.Sprintf("%s%s", host, path)
+func detailURL(args ...string) string {
+	path := fmt.Sprintf("cg/idol/detal/%s", args[0])
+	if len(args) > 1 {
+		path += fmt.Sprintf("?h=%s", args[1])
+	}
+
+	return fmt.Sprintf("%s/%s", host, path)
 }
 
 func imageURL(path string) string {
@@ -134,4 +138,14 @@ func (c *Card) Scrape(idolID, cardID string) error {
 	})
 
 	return nil
+}
+
+func ScrapeIdol(idolID string) ([]Card, error) {
+	doc, err := goquery.NewDocument(detailURL(idolID))
+
+	if err != nil {
+		return nil, fmt.Errorf("ScrapeCards: %s", err)
+	}
+
+	return nil, nil
 }
