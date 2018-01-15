@@ -67,12 +67,11 @@ type Card struct {
 }
 
 const (
-	host       = "http://imas.gamedbs.jp"
-	detailPath = "/cg/idol/detail/%s?h=%s"
+	host = "http://imas.gamedbs.jp"
 )
 
 func detailURL(args ...string) string {
-	path := fmt.Sprintf("cg/idol/detal/%s", args[0])
+	path := fmt.Sprintf("cg/idol/detail/%s", args[0])
 	if len(args) > 1 {
 		path += fmt.Sprintf("?h=%s", args[1])
 	}
@@ -100,7 +99,10 @@ func (c *Card) Scrape(idolID, cardID string) error {
 	c.IdolID = idolID
 	c.Published = cardHeader.Children().First().Text()
 
-	cardImages := cardGallery.Find("table").Eq(0)
+	tables := cardGallery.Find("table")
+	cardImages := tables.Eq(0)
+	cardProfile := tables.Eq(1)
+	cardStatus := tables.Eq(2)
 
 	cardImages.Find("img").Each(func(index int, s *goquery.Selection) {
 		if path, ok := s.Attr("data-original"); ok {
@@ -120,7 +122,9 @@ func (c *Card) Scrape(idolID, cardID string) error {
 				return
 			}
 
-			image := "data:image/png;base64," + base64.StdEncoding.EncodeToString(body)
+			ct := res.Header.Get("Content-Type")
+			data := base64.StdEncoding.EncodeToString(body)
+			image := fmt.Sprintf("data:%s;base64,%s", ct, data)
 
 			prefix := strings.Split(path, "/")[4]
 
@@ -137,6 +141,20 @@ func (c *Card) Scrape(idolID, cardID string) error {
 		}
 	})
 
+	var profileData []string
+	cardProfile.Find("td").Each(func(index int, s *goquery.Selection) {
+		profileData = append(profileData, s.Text())
+	})
+
+	fmt.Println(profileData)
+
+	var statusData []string
+	cardStatus.Find("td").Each(func(index int, s *goquery.Selection) {
+		statusData = append(statusData, s.Text())
+	})
+
+	fmt.Println(statusData)
+
 	return nil
 }
 
@@ -146,6 +164,8 @@ func ScrapeIdol(idolID string) ([]Card, error) {
 	if err != nil {
 		return nil, fmt.Errorf("ScrapeCards: %s", err)
 	}
+
+	doc.Find("div")
 
 	return nil, nil
 }
